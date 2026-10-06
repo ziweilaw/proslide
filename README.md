@@ -8,6 +8,7 @@ Concise, visual vocabulary slides for English teachers, themed to the book you'r
    - Words that don't split (corner, carpet): 2 short example sentences with the word highlighted.
 3. **One word or phrase per slide**, in the order you typed them, with an optional title slide.
 4. **Present** full screen (arrow keys / click), or **Save as PDF** (one slide per page).
+5. **💾 Save as webpage**: downloads one `.html` file of the slides exactly as edited. Pictures, the book cover, fonts and theme are stored inside it, so it works offline. Double-click to open it in any browser. Click a word to hear it, and press ▶ Present for full-screen mode.
 
 On each slide you can swap the picture, upload your own, fix the breakdown (✎), or edit the definition and sentences by clicking on them. Click 🔊, the big word, or an example word to hear it.
 
@@ -17,7 +18,9 @@ On each slide you can swap the picture, upload your own, fix the breakdown (✎)
 - *Match pictures*: students click a word, then its picture (or drag the word onto it). Right answers turn green and the word is read aloud; wrong ones shake.
 - *Fill in the blanks*: real example sentences with the word blanked out and a word bank. Students fill the blanks, then press *Check answers*. Words with no sentence fall back to "____ means ‘definition’".
 
-Both have *Show answers* and *Shuffle / restart*. **Download PDF** makes a printable worksheet with both activities (Part A pictures, Part B sentences), Name/Date lines and an answer key on the last page.
+Both have *Show answers* and *Shuffle / restart*. Two downloads:
+- **⬇ PDF**: a printable worksheet with both activities (Part A pictures, Part B sentences), Name/Date lines and an answer key on the last page.
+- **⬇ PowerPoint**: the same activities as a deck for the classroom screen (6 pictures or 4 sentences per slide), plus an answer key slide. It's editable in PowerPoint, Keynote or Google Slides.
 
 ## Free services used (no keys, no backend)
 

@@ -481,7 +481,7 @@
             ? `A compound word: ${esc(pattern.gloss)}.`
             : `<b>${esc(pattern.label)}</b> means ${esc(pattern.gloss)}.`}</p>` : ''}
           ${ex.length ? `<div class="ex">${ex.map(([w, p, e]) => `<div><div class="em">${e}</div><b class="say">${esc(w)}</b><small>${esc(p)}</small></div>`).join('')}</div>` : ''}
-          ${!s.parts && s.sentences?.length ? `<ul class="sent">${s.sentences.map((x) => `<li contenteditable="true" spellcheck="false">${highlight(x, s.input, s.defWord)}</li>`).join('')}</ul>` : ''}
+          ${!s.parts && s.sentences?.length ? `<ul class="sent">${s.sentences.map((x, k) => `<li contenteditable="true" spellcheck="false" data-sent="${k}">${highlight(x, s.input, s.defWord)}</li>`).join('')}</ul>` : ''}
         </div>
       </div>
     </div></article>`;
@@ -504,7 +504,7 @@
     const deck = $('#deck');
     if (!state.slides.length) return;
     deck.innerHTML = state.slides.map((s, i) => cardHTML(s, i + 1)).join('');
-    $('#presentBtn').disabled = $('#printBtn').disabled = false;
+    $('#presentBtn').disabled = $('#printBtn').disabled = $('#saveWebBtn').disabled = false;
   }
   function renderOne(s) {
     const el = document.querySelector(`[data-card="${s.id}"]`);
@@ -563,6 +563,13 @@
     if (act === 'remove') { state.slides.splice(state.slides.indexOf(s), 1); renderAll(); }
   });
   $('#deck').addEventListener('input', (e) => {
+    const li = e.target.closest('[data-sent]');
+    if (li) {
+      const sl = state.slides.find((x) => x.id === +li.closest('.slide').dataset.id);
+      sl.sentences[+li.dataset.sent] = li.textContent.trim();
+      sl.practice = null; // practice sentences follow the teacher's edit
+      return;
+    }
     const el = e.target.closest('[data-field="def"]');
     if (!el) return;
     const s = state.slides.find((x) => x.id === +el.closest('.slide').dataset.id);
@@ -690,6 +697,7 @@
     building: () => state.slides.some((s) => s.loading),
     hasWords: () => !!$('#words').value.trim(),
     title: () => state.title.trim(),
+    theme: () => ({ ...state.theme }), // practice PowerPoint colours
     generate,
     findSentences,
   };

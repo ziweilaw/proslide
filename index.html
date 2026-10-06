@@ -21,6 +21,7 @@
     <div class="top-actions" data-only="slides">
       <button id="presentBtn" class="btn primary" disabled>▶ Present</button>
       <button id="printBtn" class="btn" disabled>⎙ Save as PDF</button>
+      <button id="saveWebBtn" class="btn" disabled title="Save these slides as a webpage that works offline">💾 Save as webpage</button>
     </div>
   </header>
 
@@ -105,7 +106,8 @@
         <button id="prCheck" class="btn primary" hidden>✓ Check answers</button>
         <button id="prShow" class="btn">👁 Show answers</button>
         <button id="prNew" class="btn">🔀 Shuffle / restart</button>
-        <button id="prPdf" class="btn">⬇ Download PDF</button>
+        <button id="prPdf" class="btn">⬇ PDF</button>
+        <button id="prPptx" class="btn">⬇ PowerPoint</button>
       </div>
     </div>
     <div id="prBody"></div>
@@ -122,10 +124,19 @@
     </div>
   </div>
 
+  <div class="exporting" id="exporting" hidden>
+    <div class="exp-card">
+      <p id="expMsg">Preparing…</p>
+      <div class="exp-bar"><span id="expFill"></span></div>
+    </div>
+  </div>
+
   <input id="slideImgInput" type="file" accept="image/*" hidden>
   <script src="data.js"></script>
   <script src="reader.js"></script>
   <script src="app.js"></script>
   <script src="practice.js"></script>
+  <script src="export.js"></script>
+  <script src="savepage.js"></script>
 </body>
 </html>
