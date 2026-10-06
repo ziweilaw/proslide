@@ -359,7 +359,7 @@
     ).join('<span class="plus">+</span>');
     const focusWord = s.focus || s.input.toLowerCase().replace(/\s+/g, '');
     return `<article class="slide ${s.loading ? 'loading' : ''}" data-id="${s.id}">${rims}${badge()}<div class="inner">
-      <h2 class="word">${esc(s.input)}</h2>
+      <h2 class="word say" title="Click to hear it">${esc(s.input)}</h2>
       <div class="body">
         <figure class="pic">${img
           ? `<img src="${esc(img.src)}" alt="${esc(s.input)}" referrerpolicy="no-referrer"><figcaption>${img.link ? `<a href="${esc(img.link)}" target="_blank" rel="noopener">${esc(img.credit)}</a>` : esc(img.credit)}</figcaption>`
@@ -370,7 +370,7 @@
           ${pattern ? `<p class="gloss">${pattern.label === 'compound'
             ? `A compound word: ${esc(pattern.gloss)}.`
             : `<b>${esc(pattern.label)}</b> means ${esc(pattern.gloss)}.`}</p>` : ''}
-          ${ex.length ? `<div class="ex">${ex.map(([w, p, e]) => `<div><div class="em">${e}</div><b>${esc(w)}</b><small>${esc(p)}</small></div>`).join('')}</div>` : ''}
+          ${ex.length ? `<div class="ex">${ex.map(([w, p, e]) => `<div><div class="em">${e}</div><b class="say">${esc(w)}</b><small>${esc(p)}</small></div>`).join('')}</div>` : ''}
           ${!s.parts && s.sentences?.length ? `<ul class="sent">${s.sentences.map((x) => `<li contenteditable="true" spellcheck="false">${highlight(x, s.input)}</li>`).join('')}</ul>` : ''}
         </div>
       </div>
@@ -382,7 +382,8 @@
     return `<div class="card" data-card="${s.id}">
       ${isTitle ? titleSlideHTML() : wordSlideHTML(s)}
       <div class="tools"><span class="idx">${n}</span>
-        ${isTitle ? '' : `<button data-act="swap" title="Next picture">⟳ Picture</button>
+        ${isTitle ? '' : `<button data-act="say" title="Read the word aloud">🔊</button>
+        <button data-act="swap" title="Next picture">⟳ Picture</button>
         <button data-act="upload" title="Upload your own picture">🖼 Upload</button>
         <button data-act="edit" title="Edit word breakdown">✎ Breakdown</button>`}
         <button data-act="remove" title="Remove slide">✕</button>
@@ -428,10 +429,13 @@
   // ---------------------------------------------------------------- slide tools
   let uploadTarget = null;
   $('#deck').addEventListener('click', (e) => {
+    const say = e.target.closest('.say');
+    if (say) { window.PS_speak(say.textContent); return; }
     const btn = e.target.closest('button[data-act]');
     if (!btn) return;
     const s = state.slides.find((x) => x.id === +btn.closest('.card').dataset.card);
     const act = btn.dataset.act;
+    if (act === 'say') window.PS_speak(s.input);
     if (act === 'swap' && s.images?.length) { s.customImg = null; s.imgIdx = (s.imgIdx + 1) % s.images.length; renderOne(s); }
     if (act === 'upload') { uploadTarget = s; $('#slideImgInput').click(); }
     if (act === 'edit') {
@@ -530,7 +534,14 @@
   $('#prevBtn').addEventListener('click', () => show(cur - 1));
   $('#nextBtn').addEventListener('click', () => show(cur + 1));
   $('#closeBtn').addEventListener('click', closePresent);
-  $('#stage').addEventListener('click', () => show(cur + 1));
+  $('#stage').addEventListener('click', (e) => {
+    const say = e.target.closest('.say');
+    if (say) window.PS_speak(say.textContent); else show(cur + 1);
+  });
+  $('#sayBtn').addEventListener('click', () => {
+    const s = state.slides[cur];
+    window.PS_speak(s.kind === 'title' ? (state.title || 'New words') : s.input);
+  });
   document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) $('#present').hidden = true; });
   document.addEventListener('keydown', (e) => {
     if ($('#present').hidden) return;

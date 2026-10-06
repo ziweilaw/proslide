@@ -12,14 +12,18 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="logo">▣</span> ProSlide <small>vocabulary slides for teachers</small></div>
-    <div class="top-actions">
+    <div class="brand"><span class="logo">▣</span> ProSlide <small>for English teachers</small></div>
+    <nav class="tabs" role="tablist">
+      <a href="#slides" class="tab" data-view="slides">🖼 Slides</a>
+      <a href="#read" class="tab" data-view="read">🔊 Read aloud</a>
+    </nav>
+    <div class="top-actions" data-only="slides">
       <button id="presentBtn" class="btn primary" disabled>▶ Present</button>
       <button id="printBtn" class="btn" disabled>⎙ Save as PDF</button>
     </div>
   </header>
 
-  <main class="layout">
+  <main class="layout" data-only="slides">
     <aside class="panel">
       <section class="step">
         <h2><span class="num">1</span> Your book</h2>
@@ -61,18 +65,49 @@
     </section>
   </main>
 
+  <main class="reader" data-only="read" hidden>
+    <div class="reader-bar">
+      <div class="player">
+        <button id="rdPlay" class="btn primary">▶ Read aloud</button>
+        <button id="rdPause" class="btn" disabled>⏸ Pause</button>
+        <button id="rdStop" class="btn" disabled>■ Stop</button>
+      </div>
+      <label class="field inline">Voice <select id="rdVoice"></select></label>
+      <label class="field inline">Speed
+        <input id="rdRate" type="range" min="0.5" max="1.5" step="0.1" value="0.9">
+        <output id="rdRateOut">0.9×</output>
+      </label>
+      <label class="field inline">Text size
+        <select id="rdSize">
+          <option value="20">Small</option>
+          <option value="28" selected>Medium</option>
+          <option value="40">Large</option>
+          <option value="56">Extra large</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="reader-box">
+      <textarea id="rdText" spellcheck="true" placeholder="Paste a paragraph or a list of words in English…&#10;&#10;Wilbur was a very young pig. He loved the barn, the smell of hay, and the clothes hanger where Fern hung her coat."></textarea>
+      <div id="rdView" class="rd-view" hidden></div>
+    </div>
+    <p class="note" id="rdNote">Tip: click any sentence while reading to jump there. Press <b>Space</b> to pause or resume. Highlighting of single words depends on the voice; sentences are always highlighted.</p>
+  </main>
+
   <div class="present" id="present" hidden>
     <div class="stage" id="stage"></div>
     <div class="present-bar">
       <button class="btn ghost" id="prevBtn" aria-label="Previous">‹</button>
       <span id="counter"></span>
       <button class="btn ghost" id="nextBtn" aria-label="Next">›</button>
+      <button class="btn ghost" id="sayBtn" aria-label="Say the word">🔊</button>
       <button class="btn ghost" id="closeBtn" aria-label="Close">✕</button>
     </div>
   </div>
 
   <input id="slideImgInput" type="file" accept="image/*" hidden>
   <script src="data.js"></script>
+  <script src="reader.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

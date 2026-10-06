@@ -9,7 +9,9 @@ Concise, visual vocabulary slides for English teachers, themed to the book you'r
 3. **One word or phrase per slide**, in the order you typed them, with an optional title slide.
 4. **Present** full screen (arrow keys / click), or **Save as PDF** (one slide per page).
 
-On each slide you can swap the picture, upload your own, fix the breakdown (✎), or edit the definition and sentences by clicking on them.
+On each slide you can swap the picture, upload your own, fix the breakdown (✎), or edit the definition and sentences by clicking on them. Click 🔊, the big word, or an example word to hear it.
+
+**Read aloud tab**: paste a paragraph or a word list in English and press *Read aloud*. Each sentence is highlighted as it's read, and so is the current word when the voice supports it. Choose an English voice, speed (0.5×–1.5×) and text size for the projector. Click any sentence to jump there, and press Space to pause. It uses the browser's built-in voices, so it's free and needs no key (works in Chrome, Edge and Safari).
 
 ## Free services used (no keys, no backend)
 
@@ -17,6 +19,7 @@ On each slide you can swap the picture, upload your own, fix the breakdown (✎)
 |---|---|
 | Definitions, parts of speech, word-split checks | [Datamuse](https://www.datamuse.com/api/) |
 | Example sentences | [Tatoeba](https://tatoeba.org), then [Wiktionary](https://en.wiktionary.org) |
+| Read aloud | The browser's built-in speech (Web Speech API) |
 | Pictures (openly licensed, credited on the slide) | [Openverse](https://openverse.org) + [Wikimedia Commons](https://commons.wikimedia.org) |
 
 Google Images has no free, keyless API, so ProSlide uses these openly licensed sources instead.
