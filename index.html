@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ProSlide</title>
+  <meta name="description" content="Turn a vocabulary list into concise, visual slides themed to the book you're teaching.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">▣</span> ProSlide <small>vocabulary slides for teachers</small></div>
+    <div class="top-actions">
+      <button id="presentBtn" class="btn primary" disabled>▶ Present</button>
+      <button id="printBtn" class="btn" disabled>⎙ Save as PDF</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel">
+      <section class="step">
+        <h2><span class="num">1</span> Your book</h2>
+        <label class="field">Book title
+          <input id="bookTitle" type="text" placeholder="e.g. Charlotte's Web">
+        </label>
+        <label class="drop" id="coverDrop">
+          <input id="coverInput" type="file" accept="image/*" hidden>
+          <img id="coverPreview" alt="" hidden>
+          <span id="coverHint">📷 Upload or drop a screenshot of the book cover</span>
+        </label>
+        <div class="swatches" id="swatches" aria-label="Theme colours"></div>
+        <label class="field">Rim decoration
+          <select id="motif">
+            <option value="dots">Dots</option>
+            <option value="stars">Stars</option>
+            <option value="leaves">Leaves</option>
+            <option value="waves">Waves</option>
+            <option value="bunting">Bunting</option>
+            <option value="books">Books</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="step">
+        <h2><span class="num">2</span> New words &amp; phrases</h2>
+        <textarea id="words" rows="8" placeholder="One per line, in teaching order:&#10;clothes hanger&#10;fearless&#10;rainbow"></textarea>
+        <label class="check"><input id="titleSlide" type="checkbox" checked> Add a title slide</label>
+        <button id="generateBtn" class="btn primary wide">✨ Make slides</button>
+        <p class="note">One word or phrase per slide, in the order you typed them. Words that can be split (hanger = hang + er) get a breakdown and 3 examples; other words get example sentences. Click ✎ on a slide to fix a breakdown.</p>
+      </section>
+    </aside>
+
+    <section class="deck" id="deck">
+      <div class="empty">
+        <div class="empty-art">🧥 → <b>hang</b> + <b>er</b></div>
+        <p>Add your book cover and word list, then press <b>Make slides</b>.</p>
+      </div>
+    </section>
+  </main>
+
+  <div class="present" id="present" hidden>
+    <div class="stage" id="stage"></div>
+    <div class="present-bar">
+      <button class="btn ghost" id="prevBtn" aria-label="Previous">‹</button>
+      <span id="counter"></span>
+      <button class="btn ghost" id="nextBtn" aria-label="Next">›</button>
+      <button class="btn ghost" id="closeBtn" aria-label="Close">✕</button>
+    </div>
+  </div>
+
+  <input id="slideImgInput" type="file" accept="image/*" hidden>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
