@@ -27,14 +27,28 @@
           const hit = d?.[0];
           if (!hit || hit.word !== w || !hit.defs?.length) return null;
           const freq = parseFloat((hit.tags.find((t) => t.startsWith('f:')) || 'f:0').slice(2));
-          const pos = new Set(hit.tags.map((t) => POS[t]).filter(Boolean));
-          const defs = hit.defs.map((x) => {
+          // Dictionary senses only: "N" entries are encyclopedia proper nouns ("Claws": a TV series).
+          const defs = hit.defs.flatMap((x) => {
             const [p, ...rest] = x.split('\t');
-            return { pos: POS[p] || '', text: rest.join(' ').replace(/^\([^)]*\)\s*/, '').trim() };
+            if (!POS[p]) return [];
+            const raw = rest.join(' ').trim();
+            const label = (raw.match(/^\(([^)]*)\)/) || [])[1] || '';
+            return [{ pos: POS[p], label, text: raw.replace(/^\([^)]*\)\s*/, '').trim() }];
           });
-          // Prefer a definition that doesn't just repeat the word ("hanger: A clothes hanger.")
-          const best = defs.find((x) => !x.text.toLowerCase().includes(w.split(' ').at(-1))) || defs[0];
-          return { pos, defs, freq, def: shorten(best.text), defPos: best.pos };
+          if (!defs.length) return null;
+          const pos = new Set(defs.map((x) => x.pos));
+          // "claws: plural of claw" → explain the base word instead
+          const formOf = defs[0].text.match(/^(?:plural|simple past|past participle|present participle|third-person singular[\w\s-]*?|alternative (?:form|spelling)|comparative form|superlative form) of ([a-z][a-z-]*)/i)?.[1];
+          // Prefer an everyday sense that doesn't just repeat the word ("hanger: A clothes hanger.")
+          // Grammar labels ("uncountable", "intransitive") are fine; register/specialist ones are not.
+          const GRAMMAR = /^\s*(un)?countable|^\s*(in)?transitive|^\s*ergative|^\s*reflexive|^\s*not comparable|^\s*comparable|^\s*attributive|^\s*usually|^\s*often|^\s*chiefly|^\s*especially|^\s*in the plural|^\s*(US|UK|Canada|Australia|British|American|Commonwealth)\b/i;
+          const penalty = (x) => {
+            const extra = x.label.split(',').filter((l) => l.trim() && !GRAMMAR.test(l));
+            const bad = extra.some((l) => /obsolete|archaic|dated|rare|slang|vulgar|offensive|dialect|vernacular|figurative|informal|colloquial/i.test(l));
+            return (bad ? 10 : extra.length ? 2 : 0) + (x.text.toLowerCase().includes(w.split(' ').at(-1)) ? 3 : 0);
+          };
+          const best = defs.reduce((a, b) => (penalty(b) < penalty(a) ? b : a));
+          return { pos, defs, freq, formOf, def: shorten(best.text), defPos: best.pos };
         })
         .catch(() => null));
     }
@@ -47,6 +61,89 @@
     const cut = def.search(/[,;:(]/);
     if (cut > 30 && def.slice(0, cut).split(/\s+/).length <= 16) return def.slice(0, cut).trim() + '.';
     return words.slice(0, 14).join(' ').replace(/[\s,;:]+$/, '') + '…';
+  }
+  // Wiktionary knows inflected forms: "mice" → plural of mouse, "spun" → simple past of spin.
+  const FORM_OF = /^(?:plural|simple past|past participle|present participle|third-person singular|comparative|superlative|alternative (?:form|spelling))\b[^.]*? of ([a-z][a-z-]*)/i;
+  const wiktCache = new Map();
+  // English entries from Wiktionary: [{ pos, defs: [plain text, …] }]
+  function wiktionary(w) {
+    if (!wiktCache.has(w)) {
+      wiktCache.set(w, fetch(`https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(w.replace(/ /g, '_'))}`)
+        .then((r) => (r.ok ? r.json() : {}))
+        .then((d) => (d.en || []).map((e) => ({
+          pos: (e.partOfSpeech || '').toLowerCase(),
+          defs: (e.definitions || []).map((x) => (x.definition || '')
+            .replace(/<style[\s\S]*?<\/style>/gi, '')       // inline CSS Wiktionary ships with usage tags
+            .replace(/<[^>]+>/g, '')
+            .replace(/\[[^\]]*\]/g, '')                     // usage notes: [with of ‘something’]
+            .replace(/\s+/g, ' ').replace(/\s+([.,;:])/g, '$1').trim()).filter(Boolean),
+        })).filter((e) => e.defs.length))
+        .catch(() => []));
+    }
+    return wiktCache.get(w);
+  }
+  async function baseForm(w) {
+    for (const e of await wiktionary(w)) {
+      const m = e.defs[0].match(FORM_OF);
+      if (m && m[1].toLowerCase() !== w) return m[1].toLowerCase();
+    }
+    return null;
+  }
+  // A phrase/idiom definition from Wiktionary ("run out of" → "To exhaust a supply of something.")
+  async function wiktDef(phrase) {
+    for (const e of await wiktionary(phrase)) {
+      const def = e.defs.find((d) => !FORM_OF.test(d) && !/^\(.*(obsolete|archaic|slang|vulgar).*\)/i.test(d));
+      if (def) return { def: shorten(def.replace(/^\([^)]*\)\s*/, '')), defPos: e.pos === 'proper noun' ? '' : e.pos };
+    }
+    return null;
+  }
+
+  // Phrases: whole phrase → shorter parts → the key word ("get tired from" → tired).
+  const SMALL_WORDS = new Set(['a', 'an', 'the', 'to', 'of', 'from', 'in', 'on', 'at', 'by', 'for', 'with', 'about', 'into', 'onto', 'up', 'down', 'out', 'off', 'over', 'away', 'and', 'or', 'but', 'so', 'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being', 'get', 'gets', 'got', 'getting', 'become', 'became', 'make', 'made', 'take', 'took', 'have', 'has', 'had', 'do', 'does', 'did', 'go', 'goes', 'went', 'my', 'your', 'his', 'her', 'its', 'our', 'their', 'one', "one's", 'someone', 'something', 'sb', 'sth', 'very', 'too']);
+  async function phraseDef(tokens, lemmas = tokens) {
+    // also try base forms, longest first: "showed off" → "show off"
+    const spans = [];
+    for (let n = tokens.length; n >= 2; n--) {
+      for (let i = 0; i + n <= tokens.length; i++) {
+        spans.push(tokens.slice(i, i + n).join(' '));
+        const base = lemmas.slice(i, i + n).join(' ');
+        if (!spans.includes(base)) spans.push(base);
+      }
+    }
+    for (const p of spans) {
+      const e = (await lookup(p)) || (await wiktDef(p));
+      if (e?.def) return { ...e, defWord: p };
+    }
+    const content = tokens.filter((t) => !SMALL_WORDS.has(t));
+    for (const t of content.reverse()) {
+      // the word as typed first ("tired" the adjective, not "tire"), then its base form
+      const own = await lookup(t);
+      if (own?.def && !own.formOf) return { ...own, defWord: t };
+      const e = await lookupDef(t);
+      if (e?.def) return { ...e, defWord: (await baseForm(t)) || t };
+    }
+    return null;
+  }
+
+  // For the slide's definition: use the base word for plurals/past tenses (claws → claw, mice → mouse).
+  async function lookupDef(word) {
+    const w = word.toLowerCase();
+    if (!w.includes(' ')) {
+      const base = await baseForm(w);
+      const b = base && (await lookup(base));
+      if (b) return b;
+    }
+    const e = await lookup(w);
+    if (e?.formOf && e.formOf !== w) return (await lookup(e.formOf)) || e;
+    if (e || w.includes(' ')) return e;
+    const cands = [];
+    if (w.endsWith('ies')) cands.push(w.slice(0, -3) + 'y');
+    if (w.endsWith('es')) cands.push(w.slice(0, -2));
+    if (w.endsWith('s') && !w.endsWith('ss')) cands.push(w.slice(0, -1));
+    if (w.endsWith('ed')) cands.push(w.slice(0, -2), w.slice(0, -1), w.slice(0, -3));
+    if (w.endsWith('ing')) cands.push(w.slice(0, -3), w.slice(0, -3) + 'e', w.slice(0, -4));
+    for (const c of cands) if (c.length >= 3) { const b = await lookup(c); if (b) return b; }
+    return null;
   }
   const posOk = (entry, need) => !need || need.some((p) => entry.pos.has(p));
   // Guard against false splits (corner ≠ corn + er): the whole word's definitions must mention a part.
@@ -136,17 +233,27 @@
   // Phrase → explain the most interesting word (last one with a breakdown, e.g. "clothes HANGER").
   async function analyze(input) {
     const tokens = input.toLowerCase().split(/[\s-]+/).filter(Boolean);
-    const results = await Promise.all(tokens.map(analyzeWord));
+    // Break down the base word: "hangers" → hanger = hang + er
+    const lemmas = await Promise.all(tokens.map(async (t) => (await baseForm(t)) || t));
+    const results = await Promise.all(lemmas.map(analyzeWord));
     let i = results.length - 1;
     while (i >= 0 && !results[i]) i--;
-    const focus = i >= 0 ? tokens[i] : tokens.at(-1);
-    const [whole, focusEntry] = await Promise.all([lookup(tokens.join(' ')), lookup(focus)]);
-    const entry = (tokens.length === 1 ? focusEntry : whole) || focusEntry;
+    const focus = i >= 0 ? lemmas[i] : lemmas.at(-1);
+    const entry = tokens.length === 1 ? await lookupDef(focus) : await phraseDef(tokens, lemmas);
+    // "get tired" → "get tired = become tired"
+    let note = '';
+    const GET = { get: 'become', gets: 'becomes', got: 'became', getting: 'becoming' };
+    if (GET[tokens[0]] && tokens[1] && (await lookup(tokens[1]))?.pos.has('adjective')) {
+      note = `${tokens[0]} ${tokens[1]} = ${GET[tokens[0]]} ${tokens[1]}`;
+    }
+    const defWord = entry?.defWord && entry.defWord !== tokens.join(' ') ? entry.defWord : '';
     return {
-      focus: tokens.length > 1 && i >= 0 ? focus : null,
+      focus: i >= 0 && (tokens.length > 1 || lemmas[i] !== tokens[i]) ? focus : null,
       parts: i >= 0 ? results[i] : null,
       def: entry?.def || '',
       pos: entry?.defPos || '',
+      defWord,
+      note,
     };
   }
 
@@ -215,9 +322,11 @@
     return picked;
   }
   // Bold every form of the target word (hanger, hangers) inside a sentence.
-  function highlight(sentence, input) {
-    const word = input.split(' ').at(-1);
-    const re = new RegExp(`\\b(${input.replace(/\s+/g, '\\s+')}|${word})(s|es|ed|ing|d)?\\b`, 'gi');
+  function highlight(sentence, input, defWord = '') {
+    const words = input.split(' ');
+    // a phrase's last word is often small ("from"); mark the defined word instead
+    const word = defWord || words.filter((w) => w.length > 3).at(-1) || words.at(-1);
+    const re = new RegExp(`\\b(${input.replace(/\s+/g, '\\s+')}|${word.replace(/\s+/g, '\\s+')})(s|es|ed|ing|d)?\\b`, 'gi');
     return esc(sentence).replace(re, '<mark>$&</mark>');
   }
 
@@ -365,13 +474,14 @@
           ? `<img src="${esc(img.src)}" alt="${esc(s.input)}" referrerpolicy="no-referrer"><figcaption>${img.link ? `<a href="${esc(img.link)}" target="_blank" rel="noopener">${esc(img.credit)}</a>` : esc(img.credit)}</figcaption>`
           : `<div class="ph">${s.loading ? 'Finding a picture…' : 'No picture found — use 🖼 to upload one'}</div>`}</figure>
         <div class="info">
-          ${s.def || s.loading ? `<p class="def" contenteditable="true" spellcheck="false" data-field="def">${s.pos ? `<span class="pos" contenteditable="false">${esc(s.pos)}</span>` : ''}${esc(s.def || '…')}</p>` : ''}
+          ${s.def || s.loading ? `<p class="def" contenteditable="true" spellcheck="false" data-field="def">${s.defWord ? `<b class="dw say" contenteditable="false">${esc(s.defWord)}</b> ` : ''}${s.pos ? `<span class="pos" contenteditable="false">${esc(s.pos)}</span>` : ''}${esc(s.def || '…')}</p>` : ''}
+          ${s.note ? `<p class="gloss">${esc(s.note)}</p>` : ''}
           ${parts ? `<div class="break"><span class="chip">${esc(focusWord)}</span><span class="eq">=</span>${parts}</div>` : ''}
           ${pattern ? `<p class="gloss">${pattern.label === 'compound'
             ? `A compound word: ${esc(pattern.gloss)}.`
             : `<b>${esc(pattern.label)}</b> means ${esc(pattern.gloss)}.`}</p>` : ''}
           ${ex.length ? `<div class="ex">${ex.map(([w, p, e]) => `<div><div class="em">${e}</div><b class="say">${esc(w)}</b><small>${esc(p)}</small></div>`).join('')}</div>` : ''}
-          ${!s.parts && s.sentences?.length ? `<ul class="sent">${s.sentences.map((x) => `<li contenteditable="true" spellcheck="false">${highlight(x, s.input)}</li>`).join('')}</ul>` : ''}
+          ${!s.parts && s.sentences?.length ? `<ul class="sent">${s.sentences.map((x) => `<li contenteditable="true" spellcheck="false">${highlight(x, s.input, s.defWord)}</li>`).join('')}</ul>` : ''}
         </div>
       </div>
     </div></article>`;
@@ -409,7 +519,11 @@
     const [a, imgs] = await Promise.all([analyze(s.input), findImages(s.input)]);
     Object.assign(s, a, { images: imgs, imgIdx: 0 });
     // Words that don't split (corner, carpet) are explained with example sentences instead.
-    if (!s.parts) s.sentences = await findSentences(s.input);
+    if (!s.parts) {
+      // phrases with few exact matches fall back to the part that was defined ("get tired from" → "tired")
+      s.sentences = await findSentences(s.input);
+      if (s.sentences.length < 2 && s.defWord) s.sentences = [...new Set([...s.sentences, ...(await findSentences(s.defWord))])].slice(0, 2);
+    }
     s.loading = false;
     renderOne(s);
   }
@@ -453,7 +567,7 @@
     if (!el) return;
     const s = state.slides.find((x) => x.id === +el.closest('.slide').dataset.id);
     const clone = el.cloneNode(true);
-    clone.querySelector('.pos')?.remove();
+    clone.querySelectorAll('.pos, .dw').forEach((x) => x.remove());
     s.def = clone.textContent.trim();
   });
   $('#slideImgInput').addEventListener('change', async (e) => {

@@ -216,3 +216,6 @@ textarea { resize: vertical; line-height: 1.6; }
   .slide { width: 297mm; border-radius: 0; box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .rim, .chip, .ex div, .pos { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* Phrase slides: which word the definition is for ("get tired from" → tired) */
+.def .dw { color: var(--c1); font-weight: 800; margin-right: .4cqw; }
