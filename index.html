@@ -16,6 +16,7 @@
     <nav class="tabs" role="tablist">
       <a href="#slides" class="tab" data-view="slides">🖼 Slides</a>
       <a href="#read" class="tab" data-view="read">🔊 Read aloud</a>
+      <a href="#practice" class="tab" data-view="practice">🧩 Practice</a>
     </nav>
     <div class="top-actions" data-only="slides">
       <button id="presentBtn" class="btn primary" disabled>▶ Present</button>
@@ -94,6 +95,22 @@
     <p class="note" id="rdNote">Tip: click any sentence while reading to jump there. Press <b>Space</b> to pause or resume. Highlighting of single words depends on the voice; sentences are always highlighted.</p>
   </main>
 
+  <main class="practice" data-only="practice" hidden>
+    <div class="pr-bar">
+      <div class="seg" role="tablist" aria-label="Practice type">
+        <button data-mode="match" class="on">🧩 Match pictures</button>
+        <button data-mode="fill">✍️ Fill in the blanks</button>
+      </div>
+      <div class="pr-actions">
+        <button id="prCheck" class="btn primary" hidden>✓ Check answers</button>
+        <button id="prShow" class="btn">👁 Show answers</button>
+        <button id="prNew" class="btn">🔀 Shuffle / restart</button>
+        <button id="prPdf" class="btn">⬇ Download PDF</button>
+      </div>
+    </div>
+    <div id="prBody"></div>
+  </main>
+
   <div class="present" id="present" hidden>
     <div class="stage" id="stage"></div>
     <div class="present-bar">
@@ -109,5 +126,6 @@
   <script src="data.js"></script>
   <script src="reader.js"></script>
   <script src="app.js"></script>
+  <script src="practice.js"></script>
 </body>
 </html>

@@ -291,7 +291,7 @@
     const midCaps = s.split(/\s+/).slice(1).some((w) => /^[A-Z]/.test(w) && !/^I\b/.test(w)); // skip proper names
     return n >= 4 && n <= 14 && !NAMES.test(s) && !midCaps && !/[;"“]/.test(s);
   };
-  async function findSentences(input) {
+  async function findSentences(input, max = 2) {
     const q = input.includes(' ') ? `"${input}"` : `=${input}`;
     let out = [];
     try {
@@ -317,7 +317,7 @@
         return pw.filter((w) => ws.has(w)).length / Math.max(pw.length, ws.size) > 0.5;
       });
       if (!dup) picked.push(s);
-      if (picked.length === 2) break;
+      if (picked.length === max) break;
     }
     return picked;
   }
@@ -683,6 +683,16 @@
       state.cover = d.cover || null;
     } catch { /* ignore */ }
   }
+
+  // Used by the Practice tab (practice.js)
+  window.PS_api = {
+    slides: () => state.slides.filter((s) => s.kind === 'word'),
+    building: () => state.slides.some((s) => s.loading),
+    hasWords: () => !!$('#words').value.trim(),
+    title: () => state.title.trim(),
+    generate,
+    findSentences,
+  };
 
   load();
   showCover();

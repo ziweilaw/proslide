@@ -13,6 +13,12 @@ On each slide you can swap the picture, upload your own, fix the breakdown (✎)
 
 **Read aloud tab**: paste a paragraph or a word list in English and press *Read aloud*. Each sentence is highlighted as it's read, and so is the current word when the voice supports it. Choose an English voice, speed (0.5×–1.5×) and text size for the projector. Click any sentence to jump there, and press Space to pause. It uses the browser's built-in voices, so it's free and needs no key (works in Chrome, Edge and Safari).
 
+**Practice tab**: two activities built from the same word list:
+- *Match pictures*: students click a word, then its picture (or drag the word onto it). Right answers turn green and the word is read aloud; wrong ones shake.
+- *Fill in the blanks*: real example sentences with the word blanked out and a word bank. Students fill the blanks, then press *Check answers*. Words with no sentence fall back to "____ means ‘definition’".
+
+Both have *Show answers* and *Shuffle / restart*. **Download PDF** makes a printable worksheet with both activities (Part A pictures, Part B sentences), Name/Date lines and an answer key on the last page.
+
 ## Free services used (no keys, no backend)
 
 | What | Service |

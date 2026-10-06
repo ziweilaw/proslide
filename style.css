@@ -219,3 +219,82 @@ textarea { resize: vertical; line-height: 1.6; }
 
 /* Phrase slides: which word the definition is for ("get tired from" → tired) */
 .def .dw { color: var(--c1); font-weight: 800; margin-right: .4cqw; }
+
+/* ---------- Practice ---------- */
+.practice { max-width: 1100px; margin: 0 auto; padding: 24px; display: grid; gap: 16px; }
+.pr-bar {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+  background: var(--app-surface); border: 1px solid var(--app-line); border-radius: 14px; padding: 10px 14px;
+}
+.seg { display: flex; gap: 4px; padding: 3px; background: var(--app-bg); border: 1px solid var(--app-line); border-radius: 12px; }
+.seg button { border: 0; background: transparent; padding: 7px 14px; border-radius: 9px; font-weight: 700; color: var(--app-muted); cursor: pointer; }
+.seg button.on { background: var(--app-surface); color: var(--app-ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.pr-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.pr-help { margin: 0; color: var(--app-muted); }
+.pr-wait, .pr-empty { text-align: center; color: var(--app-muted); padding: 60px 20px; }
+.pr-empty { border: 2px dashed var(--app-line); border-radius: 16px; }
+.pr-empty a { color: var(--app-accent); }
+.score { margin: 0; font-size: 18px; min-height: 1.5em; }
+
+.bank {
+  display: flex; flex-wrap: wrap; gap: 10px; padding: 14px; border-radius: 14px;
+  background: var(--app-surface); border: 2px dashed var(--app-line); position: sticky; top: 70px; z-index: 2;
+}
+.wchip {
+  font: 600 20px "Fredoka", sans-serif; padding: 8px 16px; border-radius: 12px; cursor: pointer;
+  background: #fff; color: #1d2350; border: 2px solid var(--c1); box-shadow: 0 3px 0 var(--c1);
+}
+.wchip:hover:not(:disabled) { transform: translateY(-1px); }
+.wchip.picked { background: var(--c1); color: #fff; }
+.wchip.used { opacity: .3; box-shadow: none; cursor: default; text-decoration: line-through; }
+
+.pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 16px; }
+.pcard {
+  margin: 0; position: relative; background: var(--app-surface); border: 3px solid var(--app-line);
+  border-radius: 16px; overflow: hidden; cursor: pointer; transition: border-color .15s, transform .15s;
+}
+.pcard:hover:not(.ok), .pcard.picked { border-color: var(--c1); transform: translateY(-2px); }
+.pcard img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; pointer-events: none; }
+.pcard .num {
+  position: absolute; top: 8px; left: 8px; width: 30px; height: 30px; display: grid; place-items: center;
+  border-radius: 50%; background: #fff; color: #1d2350; font-weight: 800; box-shadow: 0 1px 4px rgba(0,0,0,.25);
+}
+.pcard .slot { padding: 10px; text-align: center; font: 600 20px "Fredoka", sans-serif; color: var(--app-muted); }
+.pcard.ok { border-color: #2e9e5b; cursor: default; }
+.pcard.ok .slot { color: #fff; background: #2e9e5b; }
+.pcard.shown .slot { background: #8a8f9e; }
+.bad { animation: shake .4s; border-color: #d64545 !important; }
+@keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+
+.fill { margin: 0; padding: 0 0 0 1.6em; display: grid; gap: 14px; font-size: 22px; line-height: 1.8; }
+.fill li { background: var(--app-surface); border: 1px solid var(--app-line); border-radius: 12px; padding: 10px 16px; }
+.blank {
+  display: inline-block; height: 1.5em; vertical-align: -0.3em; margin: 0 4px; padding: 0 10px;
+  font-family: "Fredoka", sans-serif; font-weight: 600; font-size: .95em; color: #1d2350;
+  background: color-mix(in srgb, var(--c3) 30%, #fff); border: 0; border-bottom: 3px solid var(--c1); border-radius: 6px 6px 0 0; cursor: pointer;
+}
+.blank.active { outline: 3px solid color-mix(in srgb, var(--c2) 70%, transparent); outline-offset: 2px; }
+.blank.ok { background: #d8f3e2; border-color: #2e9e5b; color: #1b6b3c; }
+.blank.bad { background: #fde2e2; border-color: #d64545; color: #a12a2a; }
+.blank.shown { background: #eceef4; border-color: #8a8f9e; color: #444; }
+
+@media (max-width: 860px) {
+  .practice { padding: 16px; }
+  .pr-bar { flex-direction: column; align-items: stretch; }
+  .seg button { flex: 1; }
+  .pr-actions .btn { padding: 6px 10px; font-size: 13px; }
+  .bank { top: 108px; }
+  .fill { font-size: 18px; }
+}
+
+@media print {
+  .pr-bar, .pr-help, .score { display: none !important; }
+  .practice { padding: 0; max-width: none; }
+  .bank { position: static; border: 2px solid #999; }
+  .wchip { box-shadow: none; border: 1px solid #999; font-size: 16px; }
+  .pics { grid-template-columns: repeat(3, 1fr); }
+  .pcard { break-inside: avoid; border: 1px solid #999; }
+  .pcard .slot { color: transparent; border-top: 1px solid #999; height: 44px; }
+  .fill li { break-inside: avoid; border: 0; padding: 4px 0; }
+  .blank { background: none; border-bottom: 2px solid #333; outline: none; }
+}

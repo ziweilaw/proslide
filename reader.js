@@ -8,10 +8,11 @@
 
   // ---------------------------------------------------------------- tabs (#slides / #read)
   function route() {
-    const view = location.hash === '#read' ? 'read' : 'slides';
+    const view = ['read', 'practice'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'slides';
     document.querySelectorAll('[data-only]').forEach((el) => { el.hidden = el.dataset.only !== view; });
     document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', t.dataset.view === view));
     if (view !== 'read' && synth) stop();
+    window.dispatchEvent(new CustomEvent('ps:view', { detail: view }));
   }
   window.addEventListener('hashchange', route);
 
