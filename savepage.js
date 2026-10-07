@@ -53,7 +53,7 @@
       const c = el.cloneNode(true);
       c.classList.remove('loading');
       c.querySelectorAll('[contenteditable], [spellcheck]').forEach((n) => { n.removeAttribute('contenteditable'); n.removeAttribute('spellcheck'); });
-      c.querySelectorAll('[data-field], [data-sent]').forEach((n) => { n.removeAttribute('data-field'); n.removeAttribute('data-sent'); });
+      c.querySelectorAll('[data-field], [data-sent]').forEach((n) => { n.removeAttribute('data-field'); n.removeAttribute('data-sent'); n.removeAttribute('title'); });
       return c;
     });
   }

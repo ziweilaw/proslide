@@ -3,7 +3,7 @@
 Concise, visual vocabulary slides for English teachers, themed to the book you're teaching.
 
 1. **Book theme**: upload (or paste or drop) a screenshot of the book cover. ProSlide takes its colours for the slides and adds a decorative rim (dots, stars, leaves, waves, bunting, books) plus a small cover badge.
-2. **Word breakdowns**: type new words and phrases. Each slide gets a real picture and a short English definition.
+2. **Word breakdowns**: type new words and phrases. Each slide gets a real picture, a short English definition and the **pronunciation in IPA**: UK and US when they differ (e.g. *UK /ˈhæŋə/ · US /ˈhæŋɚ/*), taken from Wiktionary. Phrases without their own entry are built from their words. Click the IPA to edit it.
    - Words that split: `hanger = hang + er`, a one-line meaning of the word part, and 3 example words (e.g. screwdriver = screw + drive + er).
    - Words that don't split (corner, carpet): 2 short example sentences with the word highlighted.
 3. **One word or phrase per slide**, in the order you typed them, with an optional title slide.

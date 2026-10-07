@@ -138,6 +138,14 @@ textarea { resize: vertical; line-height: 1.6; }
   margin: 0; font: 700 6.2cqw/1 "Fredoka", sans-serif; color: var(--c1);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 6cqw;
 }
+.head { min-width: 0; }
+/* IPA symbols (ɑ ɹ ɚ ˈ) need a font that has them; these system fonts do */
+.ipa {
+  margin: .5cqw 0 0; font-size: 2.2cqw; line-height: 1.2; color: var(--ink); opacity: .85; outline: none;
+  font-family: "Charis SIL", "Doulos SIL", "Gentium Plus", "Lucida Grande", "Segoe UI", "Arial Unicode MS", "DejaVu Sans", sans-serif;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ipa:focus { box-shadow: 0 0 0 .2cqw var(--c3); border-radius: .4cqw; white-space: normal; }
 .body { display: grid; grid-template-columns: 1.05fr 1fr; gap: 3cqw; min-height: 0; }
 .pic { margin: 0; position: relative; min-height: 0; border-radius: 1.6cqw; overflow: hidden; background: rgba(255,255,255,.7); }
 .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -298,3 +306,10 @@ textarea { resize: vertical; line-height: 1.6; }
   .fill li { break-inside: avoid; border: 0; padding: 4px 0; }
   .blank { background: none; border-bottom: 2px solid #333; outline: none; }
 }
+
+/* ---------- Export progress ---------- */
+.exporting { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(15, 17, 25, .45); }
+.exp-card { width: min(360px, calc(100vw - 32px)); background: var(--app-surface); color: var(--app-ink); border-radius: 14px; padding: 18px 20px; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+.exp-card p { margin: 0 0 12px; font-weight: 700; }
+.exp-bar { height: 8px; border-radius: 99px; background: var(--app-line); overflow: hidden; }
+.exp-bar span { display: block; height: 100%; width: 0; background: var(--app-accent); transition: width .25s; }

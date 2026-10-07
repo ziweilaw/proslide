@@ -330,6 +330,72 @@
     return esc(sentence).replace(re, '<mark>$&</mark>');
   }
 
+  // ---------------------------------------------------------------- pronunciation (IPA from Wiktionary)
+  // Wiktionary's page source lists {{IPA|en|/ˈhæŋə/|a=RP}} lines; we keep the phonemic /…/ form for UK and US.
+  const UK = /\b(RP|UK|SSB|GB|England|Southern England|Received Pronunciation)\b/i;
+  const US = /\b(GA|GenAm|US|CA|General American|American)\b/i;
+  const OTHER_ACCENT = /\b(NZ|AU|Australia|New Zealand|Scotland|Scottish|Ireland|Irish|Wales|Welsh|Dublin|India|Indian|South Africa|Northern England|Geordie|MLE|Singapore|Philippines|Caribbean|Jamaica|Nigeria|Hong Kong|Local)\b/i;
+  // Standard broad transcription: /slashes/, no narrow-phonetic marks ([ˈtaɪ̯əd] → /ˈtaɪəd/)
+  const broad = (p) => `/${p.replace(/^[/[]|[/\]]$/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[ʰʷ]/g, '')}/`;
+  const ipaCache = new Map();
+  function ipaOf(word) {
+    const w = word.toLowerCase();
+    if (!ipaCache.has(w)) {
+      ipaCache.set(w, fetch(`https://en.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(w.replace(/ /g, '_'))}&prop=wikitext&format=json&formatversion=2&redirects=1&origin=*`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          const text = d?.parse?.wikitext || '';
+          const en = text.match(/==English==([\s\S]*?)(?=\n==[^=]|$)/)?.[1] || '';
+          const out = {}, rank = {};
+          // lower rank wins: a phonemic /…/ form beats a narrow […] one; a "weak form" is a last resort
+          const keep = (k, p, r) => { if (!(k in rank) || r < rank[k]) { out[k] = broad(p); rank[k] = r; } };
+          for (const m of en.matchAll(/\{\{IPA\|en\|([^}]*)\}\}/g)) {
+            const parts = m[1].split('|').map((x) => x.trim());
+            const label = parts.filter((x) => /^a+\d*=/.test(x)).map((x) => x.split('=')[1]).join(',');
+            const prons = parts.filter((x) => /^[/[]/.test(x));
+            const p = prons.find((x) => x.startsWith('/')) || prons[0];
+            if (!p) continue;
+            const r = (p.startsWith('/') ? 0 : 2) + (/weak/i.test(label) ? 1 : 0);
+            if (UK.test(label)) keep('uk', p, r + (/\b(RP|UK|GB|Received)/.test(label) ? 0 : 0.5)); // classic RP before SSB
+            if (US.test(label)) keep('us', p, r);
+            if (!UK.test(label) && !US.test(label) && !OTHER_ACCENT.test(label)) keep('any', p, r);
+          }
+          // a general /lʊk/ beats a narrower accent-only [lɵk]
+          for (const k of ['uk', 'us']) if ('any' in rank && rank[k] > rank.any) delete out[k];
+          return out;
+        })
+        .catch(() => ({})));
+    }
+    return ipaCache.get(w);
+  }
+  // "UK /ˈhæŋə/ · US /ˈhæŋɚ/", one transcription when they agree, or '' if unknown.
+  async function pronounce(input) {
+    const whole = await ipaOf(input);
+    let uk = whole.uk || whole.any, us = whole.us || whole.any;
+    const tokens = input.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!uk && !us && tokens.length > 1) {
+      // phrase without its own entry: join the words' transcriptions → /ˈkləʊðz ˈhæŋə/
+      const each = await Promise.all(tokens.map(ipaOf));
+      const ARTICLE = { the: 'ðə', a: 'ə', an: 'ən' }; // how they sound inside a phrase
+      const join = (k) => {
+        const bits = each.map((e, i) => ARTICLE[tokens[i]] || e[k] || e.any || e.uk || e.us);
+        if (!bits.every(Boolean)) return '';
+        return `/${bits.map((b, i) => {
+          const t = b.replace(/^\/|\/$/g, '');
+          return SMALL_WORDS.has(tokens[i]) ? t.replace(/[ˈˌ]/g, '') : t; // small words are unstressed
+        }).join(' ')}/`;
+      };
+      uk = join('uk');
+      us = join('us');
+    }
+    if (uk && us && uk !== us) return `UK ${uk}  ·  US ${us}`;
+    if (uk && us) return uk;
+    // only one accent known: say which ("US /ˈskɹuˌdɹaɪvɚ/"); unlabelled forms stay plain
+    if (uk) return whole.uk && !whole.any ? `UK ${uk}` : uk;
+    if (us) return whole.us && !whole.any ? `US ${us}` : us;
+    return '';
+  }
+
   // ---------------------------------------------------------------- images (Openverse → Wikimedia Commons)
   async function openverse(q) {
     try {
@@ -468,7 +534,10 @@
     ).join('<span class="plus">+</span>');
     const focusWord = s.focus || s.input.toLowerCase().replace(/\s+/g, '');
     return `<article class="slide ${s.loading ? 'loading' : ''}" data-id="${s.id}">${rims}${badge()}<div class="inner">
-      <h2 class="word say" title="Click to hear it">${esc(s.input)}</h2>
+      <header class="head">
+        <h2 class="word say" title="Click to hear it">${esc(s.input)}</h2>
+        ${s.ipa ? `<p class="ipa" contenteditable="true" spellcheck="false" data-field="ipa" title="Pronunciation (IPA) — click to edit">${esc(s.ipa)}</p>` : ''}
+      </header>
       <div class="body">
         <figure class="pic">${img
           ? `<img src="${esc(img.src)}" alt="${esc(s.input)}" referrerpolicy="no-referrer"><figcaption>${img.link ? `<a href="${esc(img.link)}" target="_blank" rel="noopener">${esc(img.credit)}</a>` : esc(img.credit)}</figcaption>`
@@ -516,8 +585,8 @@
 
   // ---------------------------------------------------------------- generate
   async function buildSlide(s) {
-    const [a, imgs] = await Promise.all([analyze(s.input), findImages(s.input)]);
-    Object.assign(s, a, { images: imgs, imgIdx: 0 });
+    const [a, imgs, ipa] = await Promise.all([analyze(s.input), findImages(s.input), pronounce(s.input)]);
+    Object.assign(s, a, { images: imgs, imgIdx: 0, ipa });
     // Words that don't split (corner, carpet) are explained with example sentences instead.
     if (!s.parts) {
       // phrases with few exact matches fall back to the part that was defined ("get tired from" → "tired")
@@ -568,6 +637,11 @@
       const sl = state.slides.find((x) => x.id === +li.closest('.slide').dataset.id);
       sl.sentences[+li.dataset.sent] = li.textContent.trim();
       sl.practice = null; // practice sentences follow the teacher's edit
+      return;
+    }
+    const ipa = e.target.closest('[data-field="ipa"]');
+    if (ipa) {
+      state.slides.find((x) => x.id === +ipa.closest('.slide').dataset.id).ipa = ipa.textContent.trim();
       return;
     }
     const el = e.target.closest('[data-field="def"]');
