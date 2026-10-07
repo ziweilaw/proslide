@@ -240,6 +240,24 @@
   const pdfText = (t) => String(t).replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/…/g, '...')
     .replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
 
+  // Shared by the PDF here and the PowerPoint in export.js: shuffled pictures + sentences with a blank.
+  const BLANK = '________________';
+  async function worksheetData() {
+    const list = api.slides();
+    const [pics, rows] = await Promise.all([
+      Promise.all(shuffle(list.filter(imgOf)).map(async (s) => ({ word: s.input, data: await pictureData(imgOf(s)) }))),
+      Promise.all(list.map(async (s) => ({ s, p: await sentenceFor(s) }))),
+    ]);
+    const fill = shuffle(rows.filter((r) => r.p.text || r.s.def)).map(({ s, p }) => {
+      if (!p.text) return { answer: s.input, text: `${BLANK} means "${s.def.replace(/\.$/, '')}".` };
+      const m = p.text.match(blankRe(s.input));
+      const at = m.index + m[1].length;
+      return { answer: s.input, text: p.text.slice(0, at) + BLANK + p.text.slice(at + m[2].length) };
+    });
+    return { title: api.title(), pics, fill };
+  }
+  window.PS_practice = { ready: () => api.slides().length > 0 && !api.building(), data: worksheetData };
+
   async function downloadPdf() {
     const btn = $('#prPdf');
     const list = api.slides();
@@ -247,12 +265,7 @@
     btn.disabled = true;
     btn.textContent = '⏳ Making PDF…';
     try {
-      const [JsPDF, pics, rows] = await Promise.all([
-        loadJsPdf(),
-        Promise.all(shuffle(list.filter(imgOf)).map(async (s) => ({ s, data: await pictureData(imgOf(s)) }))),
-        Promise.all(list.map(async (s) => ({ s, p: await sentenceFor(s) }))),
-      ]);
-      const fillRows = shuffle(rows.filter((r) => r.p.text || r.s.def));
+      const [JsPDF, { pics, fill: fillRows }] = await Promise.all([loadJsPdf(), worksheetData()]);
       const doc = new JsPDF({ unit: 'mm', format: 'a4' });
       const W = 210, M = 15, CW = W - 2 * M, BOTTOM = 282;
       const ink = [29, 35, 80], grey = [110, 112, 128], line = [170, 172, 185];
@@ -285,7 +298,7 @@
       // Part A — match the pictures
       if (pics.length) {
         heading('Part A - Match the pictures', 'Write the correct word from the box under each picture.', 95);
-        wordBox(shuffle(pics.map((x) => x.s.input)));
+        wordBox(shuffle(pics.map((x) => x.word)));
         const cols = 3, gap = 6, cw = (CW - gap * (cols - 1)) / cols, ih = cw * 0.75, rowH = ih + 15;
         pics.forEach((x, i) => {
           const col = i % cols;
@@ -307,19 +320,10 @@
       // Part B — fill in the blanks
       if (fillRows.length) {
         heading('Part B - Fill in the blanks', 'Choose a word or phrase from the box to complete each sentence.', 60);
-        wordBox(shuffle(fillRows.map((r) => r.s.input)));
-        const blank = '________________';
+        wordBox(shuffle(fillRows.map((r) => r.answer)));
         doc.setFont('helvetica', 'normal').setFontSize(12).setTextColor(...ink);
         fillRows.forEach((r, i) => {
-          let text;
-          if (r.p.text) {
-            const m = r.p.text.match(blankRe(r.s.input));
-            const at = m.index + m[1].length;
-            text = r.p.text.slice(0, at) + blank + r.p.text.slice(at + m[2].length);
-          } else {
-            text = `${blank} means "${r.s.def.replace(/\.$/, '')}".`;
-          }
-          const lines = doc.splitTextToSize(pdfText(text), CW - 9);
+          const lines = doc.splitTextToSize(pdfText(r.text), CW - 9);
           ensure(lines.length * 6 + 6);
           doc.setFont('helvetica', 'bold').text(`${i + 1}.`, M, y + 5);
           doc.setFont('helvetica', 'normal').text(lines, M + 8, y + 5, { lineHeightFactor: 1.4 });
@@ -339,8 +343,8 @@
         items.forEach((w, i) => { ensure(7); doc.text(`${i + 1}.  ${pdfText(w)}`, M + 4, y + 5); y += 6.5; });
         y += 4;
       };
-      key('Part A - Match the pictures', pics.map((x) => x.s.input));
-      key('Part B - Fill in the blanks', fillRows.map((r) => r.s.input));
+      key('Part A - Match the pictures', pics.map((x) => x.word));
+      key('Part B - Fill in the blanks', fillRows.map((r) => r.answer));
 
       // Footer
       const n = doc.getNumberOfPages();
@@ -355,7 +359,7 @@
       alert(`Sorry, the PDF could not be made. ${err.message || ''}`);
     } finally {
       btn.disabled = false;
-      btn.textContent = '⬇ Download PDF';
+      btn.textContent = '⬇ PDF';
     }
   }
 
